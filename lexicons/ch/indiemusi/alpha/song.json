@@ -1,0 +1,69 @@
+{
+  "lexicon": 1,
+  "id": "ch.indiemusi.alpha.song",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A song or musical work: the melody, lyrics, and arrangement created by composers and authors",
+      "record": {
+        "type": "object",
+        "required": ["title", "interestedParties"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "iswc": {
+            "type": "string",
+            "description": "ISWC (International Standard Musical Work Code) with which the song is registered at a collecting society",
+            "maxLength": 13
+          },
+          "interestedParties": {
+            "type": "array",
+            "description": "List of interested parties (authors, composers, publishers) associated with this song",
+            "minLength": 1,
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "role": {
+                  "type": "string",
+                  "description": "Role of the interested party (e.g., 'author', 'composer', 'publisher')",
+                  "maxLength": 255
+                },
+                "ipi": {
+                  "type": "string",
+                  "maxLength": 11
+                },
+                "collectingSociety": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "performanceRoyaltiesPercentage": {
+                  "type": "integer",
+                  "description": "Percentage of performance royalties allocated to this interested party, 10000 = 100%"
+                },
+                "mechanicalRoyaltiesPercentage": {
+                  "type": "integer",
+                  "description": "Percentage of mechanical royalties allocated to this interested party, 10000 = 100%"
+                },
+                "did": {
+                  "type": "string",
+                  "format": "did"
+                },
+                "publishingOwner": {
+                  "type": "ref",
+                  "ref": "ch.indiemusi.alpha.actor.publishingOwner"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

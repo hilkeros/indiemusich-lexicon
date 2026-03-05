@@ -1,0 +1,77 @@
+{
+  "lexicon": 1,
+  "id": "ch.indiemusi.alpha.recording",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A recording of a song or musical work: the performance captured in a specific format",
+      "record": {
+        "type": "object",
+        "required": ["title", "artists"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "song": {
+            "type": "ref",
+            "ref": "ch.indiemusi.alpha.song"
+          },
+          "artists": {
+            "type": "array",
+            "minLength": 1,
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "did": {
+                  "type": "string",
+                  "format": "did"
+                },
+                "artist": {
+                  "type": "ref",
+                  "ref": "ch.indiemusi.alpha.actor.artist"
+                }
+              }
+            }
+          },
+          "isrc": {
+            "type": "string",
+            "description": "ISRC (International Standard Recording Code) with which the recording is registered",
+            "maxLength": 12
+          },
+          "masterOwner": {
+            "type": "object",
+            "description": "The entity (person or company) that owns the master recording rights",
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "did": {
+                "type": "string",
+                "format": "did"
+              },
+              "masterOwner": {
+                "type": "ref",
+                "ref": "ch.indiemusi.alpha.actor.masterOwner"
+              }
+            }
+          },
+          "duration": {
+            "type": "integer",
+            "description": "Duration of the recording in seconds"
+          },
+          "audioFile": {
+            "type": "blob"
+          }
+        }
+      }
+    }
+  }
+}
