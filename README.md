@@ -1,3 +1,41 @@
+# indiemusi.ch Lexicon
+
+This is a prototype and a first proposal on how to represent and save music and
+its metadata on the AT Protocol. We see a lot of potential in giving artists the
+power to host their tracks on their personal PDS, from where music and streaming
+services can consume it to offer services to music listeners.
+
+The suggested lexicons are routed in the practice of a cooperative of musicians,
+[Red Brick Records](https://www.redbrickrecords.ch/), who release their own
+music with a DIY attitude combined with a solid administrative setup. A good
+understanding about copyright and master recording royalties leads to well
+maintained and clean data and helps collecting the financial rewards of
+releasing music.
+
+We propose a set of lexicons that:
+
+- invites to upload music with clean and complete royalties data
+- makes a clear distinction between the copyright of the song and te master
+  rights of the recording of that song
+- includes music industry standard metadata like ISRC ISWC, IPI, GTIN, etc.
+- makes it possible to connect all royalty owners with theit ATProto dids
+
+Future ideas:
+
+- flows for rights owners and copyright collecting societies to confirm and
+  verify the correctness of the registered data
+- uploading audio files: we would like to avoid unfair use of music and would
+  suggest encryption of the audio files on the PDS. Artists would register their
+  music with streaming providers by exchanging encryption/decryption keys with
+  them over the AT Protocol. Streaming providers can offer different business
+  models to artists and artists would choose on which providers they want to
+  offer their tracks. Streaming providers can have trust that there is no
+  copyright infringement on the uploaded tracks, by reading the verification and
+  confirmation data or labels by copyright owners and collecting societies.
+
+## The App
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
