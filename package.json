@@ -10,6 +10,7 @@
     "migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
+    "@atproto/lex": "^0.0.20",
     "@atproto/oauth-client-node": "^0.3.17",
     "better-sqlite3": "^12.6.2",
     "kysely": "^0.28.11",
