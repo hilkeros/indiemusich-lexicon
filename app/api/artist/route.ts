@@ -60,13 +60,15 @@ export async function POST(request: NextRequest) {
   const lexClient = new Client(oauthSession);
 
   const createdAt = new Date().toISOString();
-  const res = await lexClient.create(ch.indiemusi.alpha.actor.artist, {
+  const createdData = {
     name,
     createdAt,
-  });
+  };
+  const res = await lexClient.create(ch.indiemusi.alpha.actor.artist, createdData);
 
   return NextResponse.json({
     success: true,
     uri: res.uri,
+    artist: createdData,
   });
 }

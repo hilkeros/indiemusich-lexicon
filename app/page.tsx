@@ -2,13 +2,15 @@ import { getSession } from "@/lib/auth/session";
 import { LoginForm } from "@/components/LoginForm";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ArtistForm } from "@/components/ArtistForm";
+import { PublishingOwnerForm } from "@/components/PublishingOwnerForm";
+import { ProfileTabs } from "@/components/ProfileTabs";
 
 export default async function Home() {
   const session = await getSession();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-      <main className="w-full max-w-md mx-auto p-8">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <div className="max-w-md mx-auto px-8 py-12">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
             indiemusi.ch
@@ -27,13 +29,13 @@ export default async function Home() {
                 </p>
                 <LogoutButton />
               </div>
-              <ArtistForm />
+              <ProfileTabs />
             </div>
           ) : (
             <LoginForm />
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

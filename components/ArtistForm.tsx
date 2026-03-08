@@ -54,6 +54,11 @@ export function ArtistForm() {
         throw new Error("Failed to update artist");
       }
 
+      const data = await res.json();
+      if (data.artist) {
+        setExistingArtist(data.artist);
+      }
+
       router.refresh();
     } catch (err) {
       console.error("Failed to update artist:", err);
