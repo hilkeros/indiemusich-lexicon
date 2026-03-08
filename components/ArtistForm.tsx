@@ -1,15 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-
+interface ArtistProfile {
+  name: string;
+  createdAt: string;
+}
 
 export function ArtistForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [existingArtist, setExistingArtist] = useState<ArtistProfile | null>(null);
+  const [isLoadingArtist, setIsLoadingArtist] = useState(true);
+
+  // Fetch existing artist profile on mount
+  useEffect(() => {
+    async function fetchArtist() {
+      try {
+        const res = await fetch("/api/artist");
+        if (!res.ok) {
+          throw new Error("Failed to fetch artist");
+        }
+        const data = await res.json();
+        if (data.artist) {
+          setExistingArtist(data.artist);
+        }
+      } catch (err) {
+        console.error("Failed to fetch artist:", err);
+      } finally {
+        setIsLoadingArtist(false);
+      }
+    }
+
+    fetchArtist();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,6 +63,31 @@ export function ArtistForm() {
     }
   }
 
+  // Show loading state while fetching artist
+  if (isLoadingArtist) {
+    return <div className="text-zinc-500">Loading artist profile...</div>;
+  }
+
+  // Show existing artist profile
+  if (existingArtist) {
+    return (
+      <div className="space-y-4">
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <h3 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
+            Artist Profile Found
+          </h3>
+          <p className="text-sm text-green-800 dark:text-green-200">
+            <strong>Name:</strong> {existingArtist.name}
+          </p>
+          <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+            Created: {new Date(existingArtist.createdAt).toLocaleDateString()}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show form if no existing artist
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
