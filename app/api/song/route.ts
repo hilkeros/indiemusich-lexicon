@@ -16,28 +16,22 @@ export async function GET(request: NextRequest) {
     const lexClient = new Client(oauthSession);
 
     const records = await lexClient.list(ch.indiemusi.alpha.song, {
-      limit: 10,
+      limit: 100,
       repo: session.did,
-    })
+    });
 
-    if (records.records.length > 0) {
-      const record = records.records[0];
-      console.log("Fetched song records:", record.value);
-      return NextResponse.json({
-        success: true,
-        song: record.value,
-        uri: record.uri,
-      });
-    }
-
+    // Return all songs as an array
     return NextResponse.json({
       success: true,
-      song: null,
+      songs: records.records.map((record: any) => ({
+        id: record.uri,
+        ...record.value,
+      })),
     });
   } catch (error) {
-    console.error("Failed to fetch song:", error);
+    console.error("Failed to fetch songs:", error);
     return NextResponse.json(
-      { error: "Failed to fetch song" },
+      { error: "Failed to fetch songs" },
       { status: 500 }
     );
   }
