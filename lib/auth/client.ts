@@ -8,7 +8,7 @@ import type {
 } from "@atproto/oauth-client-node";
 import { getDb } from "../db";
 
-export const SCOPE = "atproto repo:ch.indiemusi.alpha.actor.artist repo:ch.indiemusi.alpha.actor.publishingOwner repo:ch.indiemusi.alpha.actor.masterOwner";
+export const SCOPE = "atproto repo:ch.indiemusi.alpha.actor.artist repo:ch.indiemusi.alpha.actor.publishingOwner repo:ch.indiemusi.alpha.actor.masterOwner repo:ch.indiemusi.alpha.song";
 
 // Use globalThis to persist across Next.js hot reloads
 const globalAuth = globalThis as unknown as {
