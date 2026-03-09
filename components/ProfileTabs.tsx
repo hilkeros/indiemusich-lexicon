@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { ArtistForm } from "@/components/ArtistForm";
 import { PublishingOwnerForm } from "@/components/PublishingOwnerForm";
+import { MasterOwnerForm } from "@/components/MasterOwnerForm";
 
 export function ProfileTabs() {
-  const [activeTab, setActiveTab] = useState<"artist" | "owner">("artist");
+  const [activeTab, setActiveTab] = useState<"artist" | "owner" | "master">("artist");
 
   return (
     <div className="space-y-4">
@@ -30,11 +31,22 @@ export function ProfileTabs() {
         >
           Publishing Owner
         </button>
+        <button
+          onClick={() => setActiveTab("master")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "master"
+              ? "border-blue-600 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+          }`}
+        >
+          Master Owner
+        </button>
       </div>
 
       <div>
         {activeTab === "artist" && <ArtistForm />}
         {activeTab === "owner" && <PublishingOwnerForm />}
+        {activeTab === "master" && <MasterOwnerForm />}
       </div>
     </div>
   );

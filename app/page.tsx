@@ -10,7 +10,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <div className="max-w-md mx-auto px-8 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
             indiemusi.ch
@@ -20,12 +20,12 @@ export default async function Home() {
           </p>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 sm:p-8">
           {session ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  Signed in
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  {session.did}
                 </p>
                 <LogoutButton />
               </div>
