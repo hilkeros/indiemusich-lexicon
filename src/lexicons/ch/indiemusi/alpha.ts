@@ -3,3 +3,6 @@
  */
 
 export * as actor from './alpha/actor'
+export * as recording from './alpha/recording'
+export * as release from './alpha/release'
+export * as song from './alpha/song'

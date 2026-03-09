@@ -18,22 +18,8 @@
             "type": "array",
             "minLength": 1,
             "items": {
-              "type": "object",
-              "required": ["name"],
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                "did": {
-                  "type": "string",
-                  "format": "did"
-                },
-                "artist": {
-                  "type": "ref",
-                  "ref": "ch.indiemusi.alpha.actor.artist"
-                }
-              }
+              "type": "ref",
+              "ref": "#artist"
             }
           },
           "gtin": {
@@ -57,6 +43,25 @@
               "ref": "ch.indiemusi.alpha.recording"
             }
           }
+        }
+      }
+    },
+    "artist": {
+      "type": "object",
+      "description": "Information about an artist contributing to the release",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "did": {
+          "type": "string",
+          "format": "did"
+        },
+        "artist": {
+          "type": "ref",
+          "ref": "ch.indiemusi.alpha.actor.artist"
         }
       }
     }

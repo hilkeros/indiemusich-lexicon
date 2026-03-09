@@ -24,44 +24,49 @@
             "description": "List of interested parties (authors, composers, publishers) associated with this song",
             "minLength": 1,
             "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                "role": {
-                  "type": "string",
-                  "description": "Role of the interested party (e.g., 'author', 'composer', 'publisher')",
-                  "maxLength": 255
-                },
-                "ipi": {
-                  "type": "string",
-                  "maxLength": 11
-                },
-                "collectingSociety": {
-                  "type": "string",
-                  "maxLength": 255
-                },
-                "performanceRoyaltiesPercentage": {
-                  "type": "integer",
-                  "description": "Percentage of performance royalties allocated to this interested party, 10000 = 100%"
-                },
-                "mechanicalRoyaltiesPercentage": {
-                  "type": "integer",
-                  "description": "Percentage of mechanical royalties allocated to this interested party, 10000 = 100%"
-                },
-                "did": {
-                  "type": "string",
-                  "format": "did"
-                },
-                "publishingOwner": {
-                  "type": "ref",
-                  "ref": "ch.indiemusi.alpha.actor.publishingOwner"
-                }
-              }
+              "type": "ref",
+              "ref": "#interestedParty"
             }
           }
+        }
+      }
+    },
+    "interestedParty": {
+      "type": "object",
+      "description": "An interested party associated with the song (author, composer, publisher)",
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "role": {
+          "type": "string",
+          "description": "Role of the interested party (e.g., 'author', 'composer', 'publisher')",
+          "maxLength": 255
+        },
+        "ipi": {
+          "type": "string",
+          "maxLength": 11
+        },
+        "collectingSociety": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "performanceRoyaltiesPercentage": {
+          "type": "integer",
+          "description": "Percentage of performance royalties allocated to this interested party, 10000 = 100%"
+        },
+        "mechanicalRoyaltiesPercentage": {
+          "type": "integer",
+          "description": "Percentage of mechanical royalties allocated to this interested party, 10000 = 100%"
+        },
+        "did": {
+          "type": "string",
+          "format": "did"
+        },
+        "publishingOwner": {
+          "type": "ref",
+          "ref": "ch.indiemusi.alpha.actor.publishingOwner"
         }
       }
     }
