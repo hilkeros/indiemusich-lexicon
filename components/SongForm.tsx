@@ -1,7 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+
+interface PublishingOwnerProfile {
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  ipi?: string;
+  collectingSociety?: string;
+}
 
 interface InterestedParty {
   name: string;
@@ -10,6 +18,8 @@ interface InterestedParty {
   collectingSociety?: string;
   performanceRoyaltiesPercentage?: number;
   mechanicalRoyaltiesPercentage?: number;
+  did?: string;
+  publishingOwner?: PublishingOwnerProfile;
 }
 
 interface SongProfile {
@@ -18,7 +28,40 @@ interface SongProfile {
   interestedParties: InterestedParty[];
 }
 
-export function SongForm() {
+interface HandleSuggestion {
+  did: string;
+  handle: string;
+  displayName?: string;
+}
+
+interface PartyLookupState {
+  handleQuery: string;
+  suggestions: HandleSuggestion[];
+  searching: boolean;
+  lookupLoading: boolean;
+  message: string | null;
+}
+
+const emptyLookupState = (): PartyLookupState => ({
+  handleQuery: "",
+  suggestions: [],
+  searching: false,
+  lookupLoading: false,
+  message: null,
+});
+
+function getPublishingOwnerLabel(owner: PublishingOwnerProfile) {
+  if (owner.companyName) return owner.companyName;
+  const fullName = [owner.firstName, owner.lastName].filter(Boolean).join(" ").trim();
+  return fullName || "Publishing owner linked";
+}
+
+function getPublishingOwnerNameForParty(owner: PublishingOwnerProfile) {
+  if (owner.companyName) return owner.companyName;
+  return [owner.firstName, owner.lastName].filter(Boolean).join(" ").trim();
+}
+
+export function SongForm({ onSongSaved }: { onSongSaved?: () => void }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [iswc, setIswc] = useState("");
@@ -29,6 +72,8 @@ export function SongForm() {
   const [error, setError] = useState<string | null>(null);
   const [existingSong, setExistingSong] = useState<SongProfile | null>(null);
   const [isLoadingSong, setIsLoadingSong] = useState(true);
+  const [partyLookups, setPartyLookups] = useState<PartyLookupState[]>([emptyLookupState()]);
+  const lookupTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   // Fetch existing song on mount
   useEffect(() => {
@@ -52,18 +97,176 @@ export function SongForm() {
     fetchSong();
   }, []);
 
-  const updateInterestedParty = (index: number, field: string, value: any) => {
-    const updated = [...interestedParties];
-    updated[index] = { ...updated[index], [field]: value };
-    setInterestedParties(updated);
+  useEffect(() => {
+    return () => {
+      Object.values(lookupTimersRef.current).forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
+
+  const updateInterestedParty = <K extends keyof InterestedParty>(
+    index: number,
+    field: K,
+    value: InterestedParty[K],
+  ) => {
+    setInterestedParties((prev) => {
+      const updated = [...prev];
+      const current = updated[index] || { name: "" };
+      updated[index] = { ...current, [field]: value };
+      return updated;
+    });
+  };
+
+  const updatePartyLookup = (index: number, updates: Partial<PartyLookupState>) => {
+    setPartyLookups((prev) => {
+      const updated = [...prev];
+      const current = updated[index] || emptyLookupState();
+      updated[index] = { ...current, ...updates };
+      return updated;
+    });
+  };
+
+  const searchHandleSuggestions = async (index: number, query: string) => {
+    updatePartyLookup(index, { searching: true, message: null });
+
+    try {
+      const res = await fetch(`/api/actor-search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error("Search failed");
+
+      const data = await res.json();
+      const suggestions: HandleSuggestion[] = Array.isArray(data.actors)
+        ? data.actors
+            .filter((actor: any) => typeof actor?.did === "string" && typeof actor?.handle === "string")
+            .map((actor: any) => ({
+              did: actor.did,
+              handle: actor.handle,
+              displayName: typeof actor.displayName === "string" ? actor.displayName : undefined,
+            }))
+        : [];
+
+      updatePartyLookup(index, { suggestions });
+    } catch (err) {
+      console.error("Failed to search handles:", err);
+      updatePartyLookup(index, {
+        suggestions: [],
+        message: "Handle search failed. Try again.",
+      });
+    } finally {
+      updatePartyLookup(index, { searching: false });
+    }
+  };
+
+  const fetchPublishingOwnerForDid = async (index: number, did: string) => {
+    updatePartyLookup(index, {
+      lookupLoading: true,
+      message: "Looking up publishing owner...",
+    });
+
+    try {
+      const res = await fetch(`/api/publishing-owner?did=${encodeURIComponent(did)}`);
+      if (!res.ok) throw new Error("Lookup failed");
+
+      const data = await res.json();
+      const owner: PublishingOwnerProfile | null = data.publishingOwner || null;
+
+      setInterestedParties((prev) => {
+        const updated = [...prev];
+        const current = updated[index];
+        if (!current) return prev;
+
+        const nextParty: InterestedParty = {
+          ...current,
+          did,
+          publishingOwner: owner || undefined,
+        };
+
+        if (owner) {
+          const ownerName = getPublishingOwnerNameForParty(owner);
+          if (!nextParty.name && ownerName) nextParty.name = ownerName;
+          if (!nextParty.ipi && owner.ipi) nextParty.ipi = owner.ipi;
+          if (!nextParty.collectingSociety && owner.collectingSociety) {
+            nextParty.collectingSociety = owner.collectingSociety;
+          }
+        }
+
+        updated[index] = nextParty;
+        return updated;
+      });
+
+      if (owner) {
+        updatePartyLookup(index, { message: "Publishing owner linked." });
+      } else {
+        updatePartyLookup(index, {
+          message: "No publishing owner record found for this DID.",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch publishing owner for DID:", err);
+      updatePartyLookup(index, {
+        message: "Could not load publishing owner for this DID.",
+      });
+    } finally {
+      updatePartyLookup(index, { lookupLoading: false });
+    }
+  };
+
+  const onHandleInputChange = (index: number, value: string) => {
+    const existingTimer = lookupTimersRef.current[index];
+    if (existingTimer) clearTimeout(existingTimer);
+
+    updatePartyLookup(index, {
+      handleQuery: value,
+      suggestions: [],
+      searching: false,
+      message: null,
+    });
+
+    updateInterestedParty(index, "did", undefined);
+    updateInterestedParty(index, "publishingOwner", undefined);
+
+    const query = value.trim();
+    if (query.length < 2) {
+      return;
+    }
+
+    lookupTimersRef.current[index] = setTimeout(() => {
+      void searchHandleSuggestions(index, query);
+    }, 250);
+  };
+
+  const onSelectHandle = async (index: number, suggestion: HandleSuggestion) => {
+    const existingTimer = lookupTimersRef.current[index];
+    if (existingTimer) clearTimeout(existingTimer);
+
+    updatePartyLookup(index, {
+      handleQuery: suggestion.handle,
+      suggestions: [],
+      searching: false,
+      message: null,
+    });
+
+    updateInterestedParty(index, "did", suggestion.did);
+    await fetchPublishingOwnerForDid(index, suggestion.did);
   };
 
   const addInterestedParty = () => {
-    setInterestedParties([...interestedParties, { name: "" }]);
+    setInterestedParties((prev) => [...prev, { name: "" }]);
+    setPartyLookups((prev) => [...prev, emptyLookupState()]);
   };
 
   const removeInterestedParty = (index: number) => {
-    setInterestedParties(interestedParties.filter((_, i) => i !== index));
+    const existingTimer = lookupTimersRef.current[index];
+    if (existingTimer) clearTimeout(existingTimer);
+
+    const reindexedTimers: Record<number, ReturnType<typeof setTimeout>> = {};
+    Object.entries(lookupTimersRef.current).forEach(([key, timer]) => {
+      const timerIndex = Number(key);
+      if (timerIndex < index) reindexedTimers[timerIndex] = timer;
+      if (timerIndex > index) reindexedTimers[timerIndex - 1] = timer;
+    });
+    lookupTimersRef.current = reindexedTimers;
+
+    setInterestedParties((prev) => prev.filter((_, i) => i !== index));
+    setPartyLookups((prev) => prev.filter((_, i) => i !== index));
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -90,8 +293,10 @@ export function SongForm() {
             if (p.role) party.role = p.role;
             if (p.ipi) party.ipi = p.ipi;
             if (p.collectingSociety) party.collectingSociety = p.collectingSociety;
-            if (p.performanceRoyaltiesPercentage) party.performanceRoyaltiesPercentage = p.performanceRoyaltiesPercentage;
-            if (p.mechanicalRoyaltiesPercentage) party.mechanicalRoyaltiesPercentage = p.mechanicalRoyaltiesPercentage;
+            if (p.performanceRoyaltiesPercentage != null) party.performanceRoyaltiesPercentage = p.performanceRoyaltiesPercentage;
+            if (p.mechanicalRoyaltiesPercentage != null) party.mechanicalRoyaltiesPercentage = p.mechanicalRoyaltiesPercentage;
+            if (p.did) party.did = p.did;
+            if (p.publishingOwner) party.publishingOwner = p.publishingOwner;
             return party;
           }),
         }),
@@ -108,6 +313,7 @@ export function SongForm() {
       }
 
       router.refresh();
+      onSongSaved?.();
     } catch (err) {
       console.error("Failed to create song:", err);
       setError((err as Error).message || "Failed to save song");
@@ -185,6 +391,78 @@ export function SongForm() {
 
         {interestedParties.map((party, index) => (
           <div key={index} className="p-3 border border-zinc-300 dark:border-zinc-700 rounded-lg space-y-2 bg-zinc-50 dark:bg-zinc-800/50">
+            {(() => {
+              const lookup = partyLookups[index] || emptyLookupState();
+              return (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="relative">
+                      <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                        Atproto Handle
+                      </label>
+                      <input
+                        type="text"
+                        value={lookup.handleQuery}
+                        onChange={(e) => onHandleInputChange(index, e.target.value)}
+                        className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800"
+                        disabled={loading}
+                        placeholder="Type a handle, e.g. alice.bsky.social"
+                      />
+
+                      {lookup.suggestions.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-900 shadow">
+                          {lookup.suggestions.map((suggestion) => (
+                            <button
+                              key={suggestion.did}
+                              type="button"
+                              onClick={() => { void onSelectHandle(index, suggestion); }}
+                              className="w-full text-left px-2 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            >
+                              <div className="text-sm text-zinc-900 dark:text-zinc-100">{suggestion.handle}</div>
+                              {suggestion.displayName && (
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                                  {suggestion.displayName}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                        DID
+                      </label>
+                      <input
+                        type="text"
+                        value={party.did || ""}
+                        readOnly
+                        className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
+                        placeholder="Will populate from selected handle"
+                      />
+                    </div>
+                  </div>
+
+                  {(lookup.searching || lookup.lookupLoading || lookup.message) && (
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {lookup.searching
+                        ? "Searching handles..."
+                        : lookup.lookupLoading
+                        ? "Looking up publishing owner..."
+                        : lookup.message}
+                    </p>
+                  )}
+
+                  {party.publishingOwner && (
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      Linked publishing owner: {getPublishingOwnerLabel(party.publishingOwner)}
+                    </p>
+                  )}
+                </>
+              );
+            })()}
+
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                 Party {index + 1}

@@ -12,7 +12,7 @@ interface Song {
   interestedParties: any[];
 }
 
-export default function SongList({ onNewSong }: { onNewSong: () => void }) {
+export default function SongList({ onNewSong, refreshTrigger }: { onNewSong: () => void; refreshTrigger?: number }) {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +26,7 @@ export default function SongList({ onNewSong }: { onNewSong: () => void }) {
       setLoading(false);
     }
     fetchSongs();
-  }, []);
+  }, [refreshTrigger]);
 
   if (loading) return <div>Loading songs...</div>;
 

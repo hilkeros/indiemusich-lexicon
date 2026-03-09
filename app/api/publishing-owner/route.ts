@@ -11,13 +11,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const did = request.nextUrl.searchParams.get("did");
+    const repoDid = did || session.did;
+
     const client = await getOAuthClient();
     const oauthSession = await client.restore(session.did);
     const lexClient = new Client(oauthSession);
 
     const query = await lexClient.list(ch.indiemusi.alpha.actor.publishingOwner, {
       limit: 10,
-      repo: session.did,
+      repo: repoDid,
     })
 
     if (query.records.length > 0) {
@@ -27,12 +30,14 @@ export async function GET(request: NextRequest) {
         success: true,
         publishingOwner: record.value,
         uri: record.uri,
+        did: repoDid,
       });
     }
 
     return NextResponse.json({
       success: true,
       publishingOwner: null,
+      did: repoDid,
     });
   } catch (error) {
     console.error("Failed to fetch publishing owner:", error);
