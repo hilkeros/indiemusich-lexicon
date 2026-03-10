@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface ArtistProfile {
+  id?: string;
   name: string;
   createdAt: string;
 }
@@ -15,6 +16,7 @@ export function ArtistForm() {
   const [error, setError] = useState<string | null>(null);
   const [existingArtist, setExistingArtist] = useState<ArtistProfile | null>(null);
   const [isLoadingArtist, setIsLoadingArtist] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Fetch existing artist profile on mount
   useEffect(() => {
@@ -26,7 +28,7 @@ export function ArtistForm() {
         }
         const data = await res.json();
         if (data.artist) {
-          setExistingArtist(data.artist);
+          setExistingArtist({ id: data.uri, ...data.artist });
         }
       } catch (err) {
         console.error("Failed to fetch artist:", err);
@@ -44,10 +46,19 @@ export function ArtistForm() {
     setError(null);
 
     try {
+      const method = isEditing ? "PUT" : "POST";
       const res = await fetch("/api/artist", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(
+          isEditing
+            ? {
+                uri: existingArtist?.id,
+                name,
+                createdAt: existingArtist?.createdAt,
+              }
+            : { name }
+        ),
       });
 
       if (!res.ok) {
@@ -56,13 +67,16 @@ export function ArtistForm() {
 
       const data = await res.json();
       if (data.artist) {
-        setExistingArtist(data.artist);
+        setExistingArtist({ id: data.uri || existingArtist?.id, ...data.artist });
       }
+
+      setIsEditing(false);
+      setName("");
 
       router.refresh();
     } catch (err) {
       console.error("Failed to update artist:", err);
-    //   setSelected(currentStatus ?? null);
+      setError((err as Error).message || "Failed to save artist");
     } finally {
       setLoading(false);
     }
@@ -74,7 +88,7 @@ export function ArtistForm() {
   }
 
   // Show existing artist profile
-  if (existingArtist) {
+  if (existingArtist && !isEditing) {
     return (
       <div className="space-y-4">
         <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
@@ -88,6 +102,17 @@ export function ArtistForm() {
             Created: {new Date(existingArtist.createdAt).toLocaleDateString()}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setName(existingArtist.name || "");
+            setError(null);
+            setIsEditing(true);
+          }}
+          className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Edit Artist
+        </button>
       </div>
     );
   }
@@ -115,8 +140,22 @@ export function ArtistForm() {
         disabled={loading || !name}
         className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? "Saving..." : "Save Artist"}
+        {loading ? "Saving..." : isEditing ? "Update Artist" : "Save Artist"}
       </button>
+
+      {isEditing && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsEditing(false);
+            setName("");
+            setError(null);
+          }}
+          className="w-full py-2 px-4 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800"
+        >
+          Cancel
+        </button>
+      )}
     </form>
   );
 }

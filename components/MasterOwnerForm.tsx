@@ -13,7 +13,9 @@ export function MasterOwnerForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingOwner, setExistingOwner] = useState<MasterOwnerProfile | null>(null);
+  const [existingOwnerUri, setExistingOwnerUri] = useState<string | null>(null);
   const [isLoadingOwner, setIsLoadingOwner] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Fetch existing master owner profile on mount
   useEffect(() => {
@@ -26,6 +28,7 @@ export function MasterOwnerForm() {
         const data = await res.json();
         if (data.masterOwner) {
           setExistingOwner(data.masterOwner);
+          setExistingOwnerUri(typeof data.uri === "string" ? data.uri : null);
         }
       } catch (err) {
         console.error("Failed to fetch master owner:", err);
@@ -43,10 +46,11 @@ export function MasterOwnerForm() {
     setError(null);
 
     try {
+      const method = isEditing ? "PUT" : "POST";
       const res = await fetch("/api/master-owner", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(isEditing ? { uri: existingOwnerUri, name } : { name }),
       });
 
       if (!res.ok) {
@@ -56,11 +60,16 @@ export function MasterOwnerForm() {
       const data = await res.json();
       if (data.masterOwner) {
         setExistingOwner(data.masterOwner);
+        setExistingOwnerUri(data.uri || existingOwnerUri);
       }
+
+      setIsEditing(false);
+      setName("");
 
       router.refresh();
     } catch (err) {
       console.error("Failed to update master owner:", err);
+      setError((err as Error).message || "Failed to save master owner");
     } finally {
       setLoading(false);
     }
@@ -72,7 +81,7 @@ export function MasterOwnerForm() {
   }
 
   // Show existing owner profile
-  if (existingOwner) {
+  if (existingOwner && !isEditing) {
     return (
       <div className="space-y-4">
         <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
@@ -83,6 +92,17 @@ export function MasterOwnerForm() {
             <strong>Name:</strong> {existingOwner.name}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setName(existingOwner.name || "");
+            setError(null);
+            setIsEditing(true);
+          }}
+          className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Edit Master Owner
+        </button>
       </div>
     );
   }
@@ -110,8 +130,22 @@ export function MasterOwnerForm() {
         disabled={loading || !name}
         className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? "Saving..." : "Save Master Owner"}
+        {loading ? "Saving..." : isEditing ? "Update Master Owner" : "Save Master Owner"}
       </button>
+
+      {isEditing && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsEditing(false);
+            setName("");
+            setError(null);
+          }}
+          className="w-full py-2 px-4 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800"
+        >
+          Cancel
+        </button>
+      )}
     </form>
   );
 }

@@ -22,7 +22,9 @@ export function PublishingOwnerForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingOwner, setExistingOwner] = useState<PublishingOwnerProfile | null>(null);
+  const [existingOwnerUri, setExistingOwnerUri] = useState<string | null>(null);
   const [isLoadingOwner, setIsLoadingOwner] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Fetch existing publishing owner profile on mount
   useEffect(() => {
@@ -35,6 +37,7 @@ export function PublishingOwnerForm() {
         const data = await res.json();
         if (data.publishingOwner) {
           setExistingOwner(data.publishingOwner);
+          setExistingOwnerUri(typeof data.uri === "string" ? data.uri : null);
         }
       } catch (err) {
         console.error("Failed to fetch publishing owner:", err);
@@ -59,10 +62,12 @@ export function PublishingOwnerForm() {
     }
 
     try {
+      const method = isEditing ? "PUT" : "POST";
       const res = await fetch("/api/publishing-owner", {
-        method: "POST",
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...(isEditing ? { uri: existingOwnerUri } : {}),
           firstName,
           lastName,
           companyName,
@@ -79,7 +84,15 @@ export function PublishingOwnerForm() {
       const data = await res.json();
       if (data.publishingOwner) {
         setExistingOwner(data.publishingOwner);
+        setExistingOwnerUri(data.uri || existingOwnerUri);
       }
+
+      setIsEditing(false);
+      setFirstName("");
+      setLastName("");
+      setCompanyName("");
+      setIpi("");
+      setCollectingSociety("");
 
       router.refresh();
     } catch (err) {
@@ -96,7 +109,7 @@ export function PublishingOwnerForm() {
   }
 
   // Show existing owner profile
-  if (existingOwner) {
+  if (existingOwner && !isEditing) {
     return (
       <div className="space-y-4">
         <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
@@ -111,6 +124,21 @@ export function PublishingOwnerForm() {
             {existingOwner.collectingSociety && <p><strong>Collecting Society:</strong> {existingOwner.collectingSociety}</p>}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setFirstName(existingOwner.firstName || "");
+            setLastName(existingOwner.lastName || "");
+            setCompanyName(existingOwner.companyName || "");
+            setIpi(existingOwner.ipi || "");
+            setCollectingSociety(existingOwner.collectingSociety || "");
+            setError(null);
+            setIsEditing(true);
+          }}
+          className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Edit Publishing Owner
+        </button>
       </div>
     );
   }
@@ -202,8 +230,26 @@ export function PublishingOwnerForm() {
         disabled={loading || (!firstName && !lastName && !companyName) || (ipi && !/^\d{11}$/.test(ipi.replace(/\s/g, '')))}
         className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? "Saving..." : "Save Publishing Owner"}
+        {loading ? "Saving..." : isEditing ? "Update Publishing Owner" : "Save Publishing Owner"}
       </button>
+
+      {isEditing && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsEditing(false);
+            setFirstName("");
+            setLastName("");
+            setCompanyName("");
+            setIpi("");
+            setCollectingSociety("");
+            setError(null);
+          }}
+          className="w-full py-2 px-4 border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800"
+        >
+          Cancel
+        </button>
+      )}
     </form>
   );
 }

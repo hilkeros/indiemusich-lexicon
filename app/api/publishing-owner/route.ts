@@ -3,6 +3,7 @@ import { Client } from "@atproto/lex";
 import { getSession } from "@/lib/auth/session";
 import { getOAuthClient } from "@/lib/auth/client";
 import * as ch from "@/src/lexicons/ch";
+import { cleanIPI, isValidIPI, IPI_ERROR_MESSAGE } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
   const session = await getSession();
@@ -64,16 +65,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Validate and clean IPI number
-  let cleanedIpi: string | undefined;
-  if (ipi) {
-    cleanedIpi = ipi.replace(/\s/g, '');
-    
-    if (!/^\d{11}$/.test(cleanedIpi)) {
-      return NextResponse.json(
-        { error: "IPI number must be exactly 11 digits" },
-        { status: 400 }
-      );
-    }
+  const cleanedIpi = cleanIPI(ipi);
+  if (ipi && !isValidIPI(ipi)) {
+    return NextResponse.json(
+      { error: IPI_ERROR_MESSAGE },
+      { status: 400 }
+    );
   }
 
   const client = await getOAuthClient();
@@ -92,6 +89,56 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     success: true,
     uri: res.uri,
+    publishingOwner: data,
+  });
+}
+
+export async function PUT(request: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { uri, firstName, lastName, companyName, ipi, collectingSociety } =
+    await request.json();
+
+  if (!uri || typeof uri !== "string") {
+    return NextResponse.json({ error: "URI is required" }, { status: 400 });
+  }
+
+  if (!firstName && !lastName && !companyName) {
+    return NextResponse.json(
+      { error: "At least one name field is required" },
+      { status: 400 }
+    );
+  }
+
+  if (ipi && !isValidIPI(ipi)) {
+    return NextResponse.json(
+      { error: IPI_ERROR_MESSAGE },
+      { status: 400 }
+    );
+  }
+
+  const client = await getOAuthClient();
+  const oauthSession = await client.restore(session.did);
+  const lexClient = new Client(oauthSession);
+
+  const data: any = {};
+  if (firstName) data.firstName = firstName;
+  if (lastName) data.lastName = lastName;
+  if (companyName) data.companyName = companyName;
+  if (ipi) data.ipi = cleanIPI(ipi);
+  if (collectingSociety) data.collectingSociety = collectingSociety;
+
+  const uriParts = uri.split("/");
+  const rkey = uriParts[uriParts.length - 1];
+
+  await lexClient.put(ch.indiemusi.alpha.actor.publishingOwner, data, { rkey });
+
+  return NextResponse.json({
+    success: true,
+    uri,
     publishingOwner: data,
   });
 }
