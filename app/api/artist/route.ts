@@ -10,21 +10,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const didParam = request.nextUrl.searchParams.get("did");
+
   try {
     const client = await getOAuthClient();
     const oauthSession = await client.restore(session.did);
     const lexClient = new Client(oauthSession);
-    const query = await lexClient.list(ch.indiemusi.alpha.actor.artist, {
-    limit: 10,
-    repo: session.did,
-  })
 
-    if (query.records.length > 0) {
-      const record = query.records[0];
-      console.log("Fetched artist records:", record.value);
+    const repo = (didParam || session.did) as any;
+    const records = await lexClient.list(ch.indiemusi.alpha.actor.artist, {
+      limit: 10,
+      repo,
+    });
+
+    if (records.records.length > 0) {
+      const record = records.records[0];
+      const artist = {
+        ...(record.value || {}),
+        $type: record.value?.$type || "ch.indiemusi.alpha.actor.artist",
+      };
       return NextResponse.json({
         success: true,
-        artist: record.value,
+        artist,
         uri: record.uri,
       });
     }
@@ -32,23 +39,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       artist: null,
+      uri: null,
     });
   } catch (error) {
     console.error("Failed to fetch artist:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch artist" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch artist" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
-
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  
+
   const { name } = await request.json();
 
   if (!name || typeof name !== "string") {
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
     name,
     createdAt,
   };
+
   const res = await lexClient.create(ch.indiemusi.alpha.actor.artist, createdData);
 
   return NextResponse.json({
@@ -102,10 +107,9 @@ export async function PUT(request: NextRequest) {
           : new Date().toISOString(),
     };
 
-    const uriParts = uri.split("/");
-    const rkey = uriParts[uriParts.length - 1];
-
-    await lexClient.put(ch.indiemusi.alpha.actor.artist, updatedData, { rkey });
+    await lexClient.put(ch.indiemusi.alpha.actor.artist, updatedData, {
+      rkey: "self",
+    });
 
     return NextResponse.json({
       success: true,
@@ -114,10 +118,7 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to update artist:", error);
-    return NextResponse.json(
-      { error: "Failed to update artist" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update artist" }, { status: 500 });
   }
 }
 
@@ -138,10 +139,9 @@ export async function DELETE(request: NextRequest) {
     const oauthSession = await client.restore(session.did);
     const lexClient = new Client(oauthSession);
 
-    const uriParts = uri.split("/");
-    const rkey = uriParts[uriParts.length - 1];
-
-    await lexClient.delete(ch.indiemusi.alpha.actor.artist, { rkey });
+    await lexClient.delete(ch.indiemusi.alpha.actor.artist, {
+      rkey: "self",
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

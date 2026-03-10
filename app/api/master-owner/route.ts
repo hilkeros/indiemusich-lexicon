@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const didParam = request.nextUrl.searchParams.get("did");
+
   try {
     const client = await getOAuthClient();
     const oauthSession = await client.restore(session.did);
@@ -17,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const records = await lexClient.list(ch.indiemusi.alpha.actor.masterOwner, {
       limit: 10,
-      repo: session.did,
+      repo: (didParam || session.did) as any,
     })
 
     if (records.records.length > 0) {
