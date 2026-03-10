@@ -62,6 +62,21 @@ function getPublishingOwnerNameForParty(owner: PublishingOwnerProfile) {
   return [owner.firstName, owner.lastName].filter(Boolean).join(" ").trim();
 }
 
+function formatPercentageForInput(value: number | undefined) {
+  if (value == null || Number.isNaN(Number(value))) return "";
+  return (Number(value) / 100).toFixed(2);
+}
+
+function parsePercentageInput(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const parsed = Number(trimmed);
+  if (Number.isNaN(parsed)) return undefined;
+
+  return Math.round(parsed * 100);
+}
+
 interface SongToEdit {
   id: string;
   title: string;
@@ -514,11 +529,19 @@ export function SongForm({ editingSong, onSongSaved }: { editingSong?: SongToEdi
                 </label>
                 <input
                   type="number"
-                  value={party.performanceRoyaltiesPercentage || ""}
-                  onChange={(e) => updateInterestedParty(index, "performanceRoyaltiesPercentage", e.target.value ? parseInt(e.target.value) : undefined)}
+                  step="0.01"
+                  min="0"
+                  value={formatPercentageForInput(party.performanceRoyaltiesPercentage)}
+                  onChange={(e) =>
+                    updateInterestedParty(
+                      index,
+                      "performanceRoyaltiesPercentage",
+                      parsePercentageInput(e.target.value),
+                    )
+                  }
                   className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800"
                   disabled={loading}
-                  placeholder="10000 = 100%"
+                  placeholder="100.00"
                 />
               </div>
               <div>
@@ -527,11 +550,19 @@ export function SongForm({ editingSong, onSongSaved }: { editingSong?: SongToEdi
                 </label>
                 <input
                   type="number"
-                  value={party.mechanicalRoyaltiesPercentage || ""}
-                  onChange={(e) => updateInterestedParty(index, "mechanicalRoyaltiesPercentage", e.target.value ? parseInt(e.target.value) : undefined)}
+                  step="0.01"
+                  min="0"
+                  value={formatPercentageForInput(party.mechanicalRoyaltiesPercentage)}
+                  onChange={(e) =>
+                    updateInterestedParty(
+                      index,
+                      "mechanicalRoyaltiesPercentage",
+                      parsePercentageInput(e.target.value),
+                    )
+                  }
                   className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800"
                   disabled={loading}
-                  placeholder="10000 = 100%"
+                  placeholder="100.00"
                 />
               </div>
             </div>
