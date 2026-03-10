@@ -122,6 +122,26 @@ export function ReleaseList({
     return { title: "Unknown" };
   };
 
+  const formatReleaseDate = (value: string): string => {
+    const datePart = value.split("T")[0];
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart);
+
+    if (!match) {
+      return value;
+    }
+
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+
+    return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "UTC",
+    });
+  };
+
   const handleDelete = async () => {
     if (!deletingId) return;
 
@@ -175,7 +195,7 @@ export function ReleaseList({
                   )}
                   {release.releaseDate && (
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Released: {new Date(release.releaseDate).toLocaleDateString()}
+                      Released: {formatReleaseDate(release.releaseDate)}
                     </p>
                   )}
                 </div>

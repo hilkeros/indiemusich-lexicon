@@ -133,9 +133,6 @@ export function ArtistForm() {
           <p className="text-sm text-green-800 dark:text-green-200">
             <strong>Name:</strong> {existingArtist.name}
           </p>
-          <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-            Created: {new Date(existingArtist.createdAt).toLocaleDateString()}
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <button

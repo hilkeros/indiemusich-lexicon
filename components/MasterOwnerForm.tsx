@@ -124,6 +124,9 @@ export function MasterOwnerForm() {
           <h3 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
             Master Owner Profile Found
           </h3>
+          <p className="mb-3 text-xs italic text-green-700 dark:text-green-300/90">
+            A master owner owns the rights of the recording of a song. It is typically a record label and it generally assigns ISRC codes to recordings
+          </p>
           <p className="text-sm text-green-800 dark:text-green-200">
             <strong>Name:</strong> {existingOwner.name}
           </p>

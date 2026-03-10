@@ -156,6 +156,9 @@ export function PublishingOwnerForm() {
           <h3 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
             Publishing Owner Profile Found
           </h3>
+          <p className="mb-3 text-xs italic text-green-700 dark:text-green-300/90">
+            A publishing owner is an author, composer, arranger or publisher who owns copyright to a song
+          </p>
           <div className="text-sm text-green-800 dark:text-green-200 space-y-1">
             {existingOwner.firstName && <p><strong>First Name:</strong> {existingOwner.firstName}</p>}
             {existingOwner.lastName && <p><strong>Last Name:</strong> {existingOwner.lastName}</p>}
