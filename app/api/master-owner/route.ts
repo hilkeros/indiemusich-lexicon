@@ -111,3 +111,37 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { uri } = await request.json();
+
+  if (!uri || typeof uri !== "string") {
+    return NextResponse.json({ error: "URI is required" }, { status: 400 });
+  }
+
+  try {
+    const client = await getOAuthClient();
+    const oauthSession = await client.restore(session.did);
+    const lexClient = new Client(oauthSession);
+
+    const uriParts = uri.split("/");
+    const rkey = uriParts[uriParts.length - 1];
+
+    await lexClient.delete(ch.indiemusi.alpha.actor.masterOwner, { rkey });
+
+    return NextResponse.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error("Failed to delete master owner:", error);
+    return NextResponse.json(
+      { error: "Failed to delete master owner" },
+      { status: 500 }
+    );
+  }
+}
