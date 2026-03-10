@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Client } from "@atproto/lex";
+import { Client, AtIdentifierString } from "@atproto/lex";
 import { getSession } from "@/lib/auth/session";
 import { getOAuthClient } from "@/lib/auth/client";
 import * as ch from "@/src/lexicons/ch";
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const did = request.nextUrl.searchParams.get("did");
-    const repoDid = did || session.did;
+    const repoDid = (did || session.did) as AtIdentifierString;
 
     const client = await getOAuthClient();
     const oauthSession = await client.restore(session.did);

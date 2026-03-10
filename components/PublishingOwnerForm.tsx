@@ -316,7 +316,7 @@ export function PublishingOwnerForm() {
       <div className="flex items-center gap-2">
         <button
           type="submit"
-          disabled={loading || (!firstName && !lastName && !companyName) || (ipi && !/^\d{11}$/.test(ipi.replace(/\s/g, '')))}
+          disabled={loading || (!firstName && !lastName && !companyName) || (!!ipi && !/^\d{11}$/.test(ipi.replace(/\s/g, '')))}
           className="inline-flex py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? "Saving..." : isEditing ? "Update Publishing Owner" : "Save Publishing Owner"}
