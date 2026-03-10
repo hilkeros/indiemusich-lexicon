@@ -8,6 +8,8 @@ import { SongForm } from "@/components/SongForm";
 import SongList from "@/components/SongList";
 import { RecordingForm } from "@/components/RecordingForm";
 import { RecordingList } from "@/components/RecordingList";
+import { ReleaseForm } from "@/components/ReleaseForm";
+import { ReleaseList } from "@/components/ReleaseList";
 
 interface Song {
   id: string;
@@ -26,14 +28,26 @@ interface Recording {
   duration?: number;
 }
 
+interface Release {
+  id: string;
+  title: string;
+  artists: any[];
+  gtin?: string;
+  releaseDate?: string;
+  recordings?: any[];
+}
+
 export function ProfileTabs() {
-  const [activeTab, setActiveTab] = useState<"artist" | "owner" | "master" | "song" | "recording">("artist");
+  const [activeTab, setActiveTab] = useState<"artist" | "owner" | "master" | "song" | "recording" | "release">("artist");
   const [showSongForm, setShowSongForm] = useState(false);
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [songListRefresh, setSongListRefresh] = useState(0);
   const [showRecordingForm, setShowRecordingForm] = useState(false);
   const [editingRecording, setEditingRecording] = useState<Recording | null>(null);
   const [recordingListRefresh, setRecordingListRefresh] = useState(0);
+  const [showReleaseForm, setShowReleaseForm] = useState(false);
+  const [editingRelease, setEditingRelease] = useState<Release | null>(null);
+  const [releaseListRefresh, setReleaseListRefresh] = useState(0);
 
   return (
     <div className="space-y-4">
@@ -87,6 +101,16 @@ export function ProfileTabs() {
           }`}
         >
           Recordings
+        </button>
+        <button
+          onClick={() => setActiveTab("release")}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "release"
+              ? "border-blue-600 text-blue-600 dark:text-blue-400"
+              : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+          }`}
+        >
+          Releases
         </button>
       </div>
 
@@ -170,6 +194,51 @@ export function ProfileTabs() {
                       setRecordingListRefresh(prev => prev + 1);
                       setShowRecordingForm(false);
                       setEditingRecording(null);
+                    }} 
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        {activeTab === "release" && (
+          <>
+            <div className="mb-4">
+              <button
+                onClick={() => {
+                  setEditingRelease(null);
+                  setShowReleaseForm(true);
+                }}
+                className="inline-flex py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                + New Release
+              </button>
+            </div>
+            <ReleaseList 
+              onEditRelease={(release) => {
+                setEditingRelease(release);
+                setShowReleaseForm(true);
+              }}
+              refreshTrigger={releaseListRefresh}
+            />
+            {showReleaseForm && (
+              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+                <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto relative">
+                  <button
+                    className="absolute top-2 right-2 text-zinc-500 hover:text-zinc-900"
+                    onClick={() => {
+                      setShowReleaseForm(false);
+                      setEditingRelease(null);
+                    }}
+                  >
+                    ✕
+                  </button>
+                  <ReleaseForm 
+                    editingRelease={editingRelease || undefined}
+                    onReleaseSaved={() => {
+                      setReleaseListRefresh(prev => prev + 1);
+                      setShowReleaseForm(false);
+                      setEditingRelease(null);
                     }} 
                   />
                 </div>
