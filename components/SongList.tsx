@@ -12,7 +12,7 @@ interface Song {
   interestedParties: any[];
 }
 
-export default function SongList({ onNewSong, refreshTrigger }: { onNewSong: () => void; refreshTrigger?: number }) {
+export default function SongList({ onNewSong, onEditSong, refreshTrigger }: { onNewSong: () => void; onEditSong: (song: Song) => void; refreshTrigger?: number }) {
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,23 +35,34 @@ export default function SongList({ onNewSong, refreshTrigger }: { onNewSong: () 
       <button onClick={onNewSong} className="mb-4 px-4 py-2 bg-blue-600 text-white rounded">New Song</button>
       <div className="space-y-4">
         {songs.map((song) => (
-          <SongCard key={song.id} song={song} />
+          <SongCard key={song.id} song={song} onEdit={onEditSong} />
         ))}
       </div>
     </div>
   );
 }
 
-function SongCard({ song }: { song: Song }) {
+function SongCard({ song, onEdit }: { song: Song; onEdit: (song: Song) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="border rounded p-4 bg-white shadow">
-      <div className="flex justify-between items-center cursor-pointer" onClick={() => setOpen((v) => !v)}>
-        <div>
+      <div className="flex justify-between items-center">
+        <div className="flex-1 cursor-pointer" onClick={() => setOpen((v) => !v)}>
           <div className="font-bold">{song.title}</div>
           <div className="text-xs text-gray-500">ISWC: {song.iswc || "-"}</div>
         </div>
-        <span>{open ? "▲" : "▼"}</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(song);
+            }}
+            className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 px-2 py-1"
+          >
+            Edit
+          </button>
+          <span className="cursor-pointer" onClick={() => setOpen((v) => !v)}>{open ? "▲" : "▼"}</span>
+        </div>
       </div>
       {open && (
         <div className="mt-2 text-sm">

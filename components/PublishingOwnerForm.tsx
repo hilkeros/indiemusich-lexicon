@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { isValidIPI, IPI_ERROR_MESSAGE, cleanIPI } from "@/lib/validation";
 
 interface PublishingOwnerProfile {
   firstName?: string;
@@ -51,13 +52,10 @@ export function PublishingOwnerForm() {
     setError(null);
 
     // Validate IPI format before submitting
-    if (ipi) {
-      const cleanedIpi = ipi.replace(/\s/g, '');
-      if (!/^\d{11}$/.test(cleanedIpi)) {
-        setError("IPI number must be exactly 11 digits");
-        setLoading(false);
-        return;
-      }
+    if (!isValidIPI(ipi)) {
+      setError(IPI_ERROR_MESSAGE);
+      setLoading(false);
+      return;
     }
 
     try {
@@ -68,7 +66,7 @@ export function PublishingOwnerForm() {
           firstName,
           lastName,
           companyName,
-          ipi,
+          ipi: cleanIPI(ipi),
           collectingSociety,
         }),
       });

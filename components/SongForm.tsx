@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { isValidIPI, IPI_ERROR_MESSAGE, cleanIPI } from "@/lib/validation";
 
 interface PublishingOwnerProfile {
   firstName?: string;
@@ -61,41 +62,30 @@ function getPublishingOwnerNameForParty(owner: PublishingOwnerProfile) {
   return [owner.firstName, owner.lastName].filter(Boolean).join(" ").trim();
 }
 
-export function SongForm({ onSongSaved }: { onSongSaved?: () => void }) {
+interface SongToEdit {
+  id: string;
+  title: string;
+  iswc?: string;
+  interestedParties: InterestedParty[];
+}
+
+export function SongForm({ editingSong, onSongSaved }: { editingSong?: SongToEdit; onSongSaved?: () => void }) {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [iswc, setIswc] = useState("");
-  const [interestedParties, setInterestedParties] = useState<InterestedParty[]>([
-    { name: "" },
-  ]);
+  const [title, setTitle] = useState(editingSong?.title || "");
+  const [iswc, setIswc] = useState(editingSong?.iswc || "");
+  const [interestedParties, setInterestedParties] = useState<InterestedParty[]>(
+    editingSong?.interestedParties && editingSong.interestedParties.length > 0
+      ? editingSong.interestedParties
+      : [{ name: "" }]
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [existingSong, setExistingSong] = useState<SongProfile | null>(null);
-  const [isLoadingSong, setIsLoadingSong] = useState(true);
-  const [partyLookups, setPartyLookups] = useState<PartyLookupState[]>([emptyLookupState()]);
+  const [partyLookups, setPartyLookups] = useState<PartyLookupState[]>(
+    editingSong?.interestedParties
+      ? editingSong.interestedParties.map(() => emptyLookupState())
+      : [emptyLookupState()]
+  );
   const lookupTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
-
-  // Fetch existing song on mount
-  useEffect(() => {
-    async function fetchSong() {
-      try {
-        const res = await fetch("/api/song");
-        if (!res.ok) {
-          throw new Error("Failed to fetch song");
-        }
-        const data = await res.json();
-        if (data.song) {
-          setExistingSong(data.song);
-        }
-      } catch (err) {
-        console.error("Failed to fetch song:", err);
-      } finally {
-        setIsLoadingSong(false);
-      }
-    }
-
-    fetchSong();
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -281,79 +271,59 @@ export function SongForm({ onSongSaved }: { onSongSaved?: () => void }) {
       return;
     }
 
+    // Validate IPI numbers
+    for (const party of interestedParties) {
+      if (party.ipi && !isValidIPI(party.ipi)) {
+        setError(`${IPI_ERROR_MESSAGE} for ${party.name}`);
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
-      const res = await fetch("/api/song", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          iswc: iswc || undefined,
-          interestedParties: interestedParties.map(p => {
-            const party: any = { name: p.name };
-            if (p.role) party.role = p.role;
-            if (p.ipi) party.ipi = p.ipi;
-            if (p.collectingSociety) party.collectingSociety = p.collectingSociety;
-            if (p.performanceRoyaltiesPercentage != null) party.performanceRoyaltiesPercentage = p.performanceRoyaltiesPercentage;
-            if (p.mechanicalRoyaltiesPercentage != null) party.mechanicalRoyaltiesPercentage = p.mechanicalRoyaltiesPercentage;
-            if (p.did) party.did = p.did;
-            if (p.publishingOwner) party.publishingOwner = p.publishingOwner;
-            return party;
-          }),
+      const payload = {
+        title,
+        iswc: iswc || undefined,
+        interestedParties: interestedParties.map(p => {
+          const party: any = { name: p.name };
+          if (p.role) party.role = p.role;
+          if (p.ipi) party.ipi = cleanIPI(p.ipi);
+          if (p.collectingSociety) party.collectingSociety = p.collectingSociety;
+          if (p.performanceRoyaltiesPercentage != null) party.performanceRoyaltiesPercentage = p.performanceRoyaltiesPercentage;
+          if (p.mechanicalRoyaltiesPercentage != null) party.mechanicalRoyaltiesPercentage = p.mechanicalRoyaltiesPercentage;
+          if (p.did) party.did = p.did;
+          if (p.publishingOwner) party.publishingOwner = p.publishingOwner;
+          return party;
         }),
+      };
+
+      const isEditing = !!editingSong;
+      const res = await fetch("/api/song", {
+        method: isEditing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(isEditing ? { ...payload, uri: editingSong.id } : payload),
       });
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to create song");
-      }
-
-      const data = await res.json();
-      if (data.song) {
-        setExistingSong(data.song);
+        throw new Error(data.error || `Failed to ${isEditing ? 'update' : 'create'} song`);
       }
 
       router.refresh();
       onSongSaved?.();
     } catch (err) {
-      console.error("Failed to create song:", err);
+      console.error(`Failed to ${editingSong ? 'update' : 'create'} song:`, err);
       setError((err as Error).message || "Failed to save song");
     } finally {
       setLoading(false);
     }
   }
 
-  // Show loading state while fetching song
-  if (isLoadingSong) {
-    return <div className="text-zinc-500">Loading song...</div>;
-  }
-
-  // Show existing song
-  if (existingSong) {
-    return (
-      <div className="space-y-4">
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-          <h3 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">
-            Song Found
-          </h3>
-          <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-            <strong>Title:</strong> {existingSong.title}
-          </p>
-          {existingSong.iswc && (
-            <p className="text-sm text-green-800 dark:text-green-200 mb-2">
-              <strong>ISWC:</strong> {existingSong.iswc}
-            </p>
-          )}
-          <div className="text-xs text-green-700 dark:text-green-300">
-            <strong>Interested Parties:</strong> {existingSong.interestedParties.length}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show form if no existing song
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
+        {editingSong ? 'Edit Song' : 'New Song'}
+      </h2>
       <div>
         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
           Song Title *
@@ -520,7 +490,6 @@ export function SongForm({ onSongSaved }: { onSongSaved?: () => void }) {
                   onChange={(e) => updateInterestedParty(index, "ipi", e.target.value)}
                   className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800"
                   disabled={loading}
-                  maxLength={11}
                 />
               </div>
               <div>
@@ -586,7 +555,7 @@ export function SongForm({ onSongSaved }: { onSongSaved?: () => void }) {
         disabled={loading || !title || interestedParties.length === 0 || interestedParties.some(p => !p.name)}
         className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? "Saving..." : "Save Song"}
+        {loading ? "Saving..." : editingSong ? "Update Song" : "Save Song"}
       </button>
     </form>
   );

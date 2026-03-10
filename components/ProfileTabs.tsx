@@ -7,9 +7,17 @@ import { MasterOwnerForm } from "@/components/MasterOwnerForm";
 import { SongForm } from "@/components/SongForm";
 import SongList from "@/components/SongList";
 
+interface Song {
+  id: string;
+  title: string;
+  iswc?: string;
+  interestedParties: any[];
+}
+
 export function ProfileTabs() {
   const [activeTab, setActiveTab] = useState<"artist" | "owner" | "master" | "song">("artist");
   const [showSongForm, setShowSongForm] = useState(false);
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [songListRefresh, setSongListRefresh] = useState(0);
 
   return (
@@ -63,20 +71,37 @@ export function ProfileTabs() {
         {activeTab === "master" && <MasterOwnerForm />}
         {activeTab === "song" && (
           <>
-            <SongList onNewSong={() => setShowSongForm(true)} refreshTrigger={songListRefresh} />
+            <SongList 
+              onNewSong={() => {
+                setEditingSong(null);
+                setShowSongForm(true);
+              }}
+              onEditSong={(song) => {
+                setEditingSong(song);
+                setShowSongForm(true);
+              }}
+              refreshTrigger={songListRefresh}
+            />
             {showSongForm && (
               <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
                 <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto relative">
                   <button
                     className="absolute top-2 right-2 text-zinc-500 hover:text-zinc-900"
-                    onClick={() => setShowSongForm(false)}
+                    onClick={() => {
+                      setShowSongForm(false);
+                      setEditingSong(null);
+                    }}
                   >
                     ✕
                   </button>
-                  <SongForm onSongSaved={() => {
-                    setSongListRefresh(prev => prev + 1);
-                    setShowSongForm(false);
-                  }} />
+                  <SongForm 
+                    editingSong={editingSong || undefined}
+                    onSongSaved={() => {
+                      setSongListRefresh(prev => prev + 1);
+                      setShowSongForm(false);
+                      setEditingSong(null);
+                    }} 
+                  />
                 </div>
               </div>
             )}
