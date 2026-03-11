@@ -71,10 +71,18 @@ function parsePercentageInput(value: string): number | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
 
-  const parsed = Number(trimmed);
+  const normalized = trimmed.replace(",", ".");
+  const parsed = Number(normalized);
   if (Number.isNaN(parsed)) return undefined;
 
   return Math.round(parsed * 100);
+}
+
+function getPercentageDrafts(
+  parties: InterestedParty[],
+  field: "performanceRoyaltiesPercentage" | "mechanicalRoyaltiesPercentage",
+) {
+  return parties.map((party) => formatPercentageForInput(party[field]));
 }
 
 interface SongToEdit {
@@ -99,6 +107,22 @@ export function SongForm({ editingSong, onSongSaved }: { editingSong?: SongToEdi
     editingSong?.interestedParties
       ? editingSong.interestedParties.map(() => emptyLookupState())
       : [emptyLookupState()]
+  );
+  const [performanceDrafts, setPerformanceDrafts] = useState<string[]>(() =>
+    getPercentageDrafts(
+      editingSong?.interestedParties && editingSong.interestedParties.length > 0
+        ? editingSong.interestedParties
+        : [{ name: "" }],
+      "performanceRoyaltiesPercentage",
+    ),
+  );
+  const [mechanicalDrafts, setMechanicalDrafts] = useState<string[]>(() =>
+    getPercentageDrafts(
+      editingSong?.interestedParties && editingSong.interestedParties.length > 0
+        ? editingSong.interestedParties
+        : [{ name: "" }],
+      "mechanicalRoyaltiesPercentage",
+    ),
   );
   const lookupTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
@@ -256,6 +280,8 @@ export function SongForm({ editingSong, onSongSaved }: { editingSong?: SongToEdi
   const addInterestedParty = () => {
     setInterestedParties((prev) => [...prev, { name: "" }]);
     setPartyLookups((prev) => [...prev, emptyLookupState()]);
+    setPerformanceDrafts((prev) => [...prev, ""]);
+    setMechanicalDrafts((prev) => [...prev, ""]);
   };
 
   const removeInterestedParty = (index: number) => {
@@ -272,6 +298,52 @@ export function SongForm({ editingSong, onSongSaved }: { editingSong?: SongToEdi
 
     setInterestedParties((prev) => prev.filter((_, i) => i !== index));
     setPartyLookups((prev) => prev.filter((_, i) => i !== index));
+    setPerformanceDrafts((prev) => prev.filter((_, i) => i !== index));
+    setMechanicalDrafts((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const onPercentageDraftChange = (
+    index: number,
+    value: string,
+    kind: "performance" | "mechanical",
+  ) => {
+    if (kind === "performance") {
+      setPerformanceDrafts((prev) => {
+        const updated = [...prev];
+        updated[index] = value;
+        return updated;
+      });
+      return;
+    }
+
+    setMechanicalDrafts((prev) => {
+      const updated = [...prev];
+      updated[index] = value;
+      return updated;
+    });
+  };
+
+  const commitPercentageDraft = (index: number, kind: "performance" | "mechanical") => {
+    const currentDraft = kind === "performance" ? performanceDrafts[index] : mechanicalDrafts[index];
+    const parsed = parsePercentageInput(currentDraft || "");
+    const normalized = formatPercentageForInput(parsed);
+
+    if (kind === "performance") {
+      updateInterestedParty(index, "performanceRoyaltiesPercentage", parsed);
+      setPerformanceDrafts((prev) => {
+        const updated = [...prev];
+        updated[index] = normalized;
+        return updated;
+      });
+      return;
+    }
+
+    updateInterestedParty(index, "mechanicalRoyaltiesPercentage", parsed);
+    setMechanicalDrafts((prev) => {
+      const updated = [...prev];
+      updated[index] = normalized;
+      return updated;
+    });
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -528,17 +600,13 @@ export function SongForm({ editingSong, onSongSaved }: { editingSong?: SongToEdi
                   Performance %
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   step="0.01"
                   min="0"
-                  value={formatPercentageForInput(party.performanceRoyaltiesPercentage)}
-                  onChange={(e) =>
-                    updateInterestedParty(
-                      index,
-                      "performanceRoyaltiesPercentage",
-                      parsePercentageInput(e.target.value),
-                    )
-                  }
+                  value={performanceDrafts[index] ?? ""}
+                  onChange={(e) => onPercentageDraftChange(index, e.target.value, "performance")}
+                  onBlur={() => commitPercentageDraft(index, "performance")}
                   className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800"
                   disabled={loading}
                   placeholder="100.00"
@@ -549,17 +617,13 @@ export function SongForm({ editingSong, onSongSaved }: { editingSong?: SongToEdi
                   Mechanical %
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   step="0.01"
                   min="0"
-                  value={formatPercentageForInput(party.mechanicalRoyaltiesPercentage)}
-                  onChange={(e) =>
-                    updateInterestedParty(
-                      index,
-                      "mechanicalRoyaltiesPercentage",
-                      parsePercentageInput(e.target.value),
-                    )
-                  }
+                  value={mechanicalDrafts[index] ?? ""}
+                  onChange={(e) => onPercentageDraftChange(index, e.target.value, "mechanical")}
+                  onBlur={() => commitPercentageDraft(index, "mechanical")}
                   className="w-full px-2 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded bg-white dark:bg-zinc-800"
                   disabled={loading}
                   placeholder="100.00"
