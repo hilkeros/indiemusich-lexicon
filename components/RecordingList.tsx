@@ -16,7 +16,13 @@ interface MasterOwnerInfo {
 interface Recording {
   id: string;
   title: string;
-  song?: any;
+  song?: {
+    ref?: string | { $link?: string };
+    uri?: string;
+    id?: string;
+    title?: string;
+    iswc?: string;
+  } | string;
   artists: Artist[];
   isrc?: string;
   masterOwner?: MasterOwnerInfo;
@@ -119,10 +125,15 @@ export function RecordingList({
 
           {expandedId === recording.id && (
             <div className="mt-4 space-y-3 border-t border-zinc-300 dark:border-zinc-700 pt-3">
-              {recording.song && (
+              {recording.song && typeof recording.song !== "string" && (
                 <div>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400">Song Ref</p>
-                  <p className="text-sm text-zinc-900 dark:text-zinc-100">{recording.song.ref}</p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400">Song</p>
+                  {recording.song.title && (
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{recording.song.title}</p>
+                  )}
+                  {recording.song.iswc && (
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">ISWC: {recording.song.iswc}</p>
+                  )}
                 </div>
               )}
 
