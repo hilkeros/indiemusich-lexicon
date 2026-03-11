@@ -124,11 +124,11 @@ export default function SongList({ onNewSong, onEditSong, refreshTrigger }: { on
 function SongCard({ song, onEdit, onDelete, isDeleting }: { song: Song; onEdit: (song: Song) => void; onDelete: (song: Song) => void; isDeleting: boolean }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border rounded p-4 bg-white shadow">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <div className="flex justify-between items-center">
         <div className="flex-1 cursor-pointer" onClick={() => setOpen((v) => !v)}>
-          <div className="font-bold">{song.title}</div>
-          <div className="text-xs text-gray-500">ISWC: {song.iswc || "-"}</div>
+          <div className="font-bold text-zinc-900 dark:text-zinc-100">{song.title}</div>
+          <div className="text-xs text-zinc-600 dark:text-zinc-400">ISWC: {song.iswc || "-"}</div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -151,33 +151,33 @@ function SongCard({ song, onEdit, onDelete, isDeleting }: { song: Song; onEdit: 
           >
             {isDeleting ? "Deleting..." : "Delete"}
           </button>
-          <span className="cursor-pointer" onClick={() => setOpen((v) => !v)}>{open ? "▲" : "▼"}</span>
+          <span className="cursor-pointer text-zinc-700 dark:text-zinc-300" onClick={() => setOpen((v) => !v)}>{open ? "▲" : "▼"}</span>
         </div>
       </div>
       {open && (
-        <div className="mt-2 text-sm">
-          <div className="font-semibold mb-2">Interested Parties:</div>
+        <div className="mt-2 text-sm text-zinc-700 dark:text-zinc-200">
+          <div className="font-semibold mb-2 text-zinc-900 dark:text-zinc-100">Interested Parties:</div>
           <div className="overflow-x-auto">
-            <table className="min-w-full border text-xs">
-              <thead className="bg-gray-100">
+            <table className="min-w-full border border-zinc-200 text-xs dark:border-zinc-700">
+              <thead className="bg-zinc-100 dark:bg-zinc-800">
                 <tr>
-                  <th className="px-2 py-1 border">Name</th>
-                  <th className="px-2 py-1 border">Role</th>
-                  <th className="px-2 py-1 border">IPI</th>
-                  <th className="px-2 py-1 border">Collecting Society</th>
-                  <th className="px-2 py-1 border text-right">Performance %</th>
-                  <th className="px-2 py-1 border text-right">Mechanical %</th>
+                  <th className="px-2 py-1 border border-zinc-200 dark:border-zinc-700">Name</th>
+                  <th className="px-2 py-1 border border-zinc-200 dark:border-zinc-700">Role</th>
+                  <th className="px-2 py-1 border border-zinc-200 dark:border-zinc-700">IPI</th>
+                  <th className="px-2 py-1 border border-zinc-200 dark:border-zinc-700">Collecting Society</th>
+                  <th className="px-2 py-1 border border-zinc-200 dark:border-zinc-700 text-right">Performance %</th>
+                  <th className="px-2 py-1 border border-zinc-200 dark:border-zinc-700 text-right">Mechanical %</th>
                 </tr>
               </thead>
               <tbody>
                 {song.interestedParties.map((p, i) => (
-                  <tr key={i} className="even:bg-gray-50">
-                    <td className="px-2 py-1 border">{p.name}</td>
-                    <td className="px-2 py-1 border">{p.role || ""}</td>
-                    <td className="px-2 py-1 border">{p.ipi || ""}</td>
-                    <td className="px-2 py-1 border">{p.collectingSociety || ""}</td>
-                    <td className="px-2 py-1 border text-right">{formatPercentage(p.performanceRoyaltiesPercentage)}</td>
-                    <td className="px-2 py-1 border text-right">{formatPercentage(p.mechanicalRoyaltiesPercentage)}</td>
+                  <tr key={i} className="even:bg-zinc-50 dark:even:bg-zinc-800/40">
+                    <td className="px-2 py-1 border border-zinc-200 dark:border-zinc-700">{p.name}</td>
+                    <td className="px-2 py-1 border border-zinc-200 dark:border-zinc-700">{p.role || ""}</td>
+                    <td className="px-2 py-1 border border-zinc-200 dark:border-zinc-700">{p.ipi || ""}</td>
+                    <td className="px-2 py-1 border border-zinc-200 dark:border-zinc-700">{p.collectingSociety || ""}</td>
+                    <td className="px-2 py-1 border border-zinc-200 dark:border-zinc-700 text-right">{formatPercentage(p.performanceRoyaltiesPercentage)}</td>
+                    <td className="px-2 py-1 border border-zinc-200 dark:border-zinc-700 text-right">{formatPercentage(p.mechanicalRoyaltiesPercentage)}</td>
                   </tr>
                 ))}
               </tbody>
