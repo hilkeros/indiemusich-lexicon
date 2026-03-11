@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Client, AtIdentifierString } from "@atproto/lex";
 import { getSession } from "@/lib/auth/session";
 import { getOAuthClient } from "@/lib/auth/client";
+import { fetchFirstRecordFromRepo } from "@/lib/atproto-actors";
 import * as ch from "@/src/lexicons/ch";
 import { cleanIPI, isValidIPI, IPI_ERROR_MESSAGE } from "@/lib/validation";
 
@@ -15,24 +16,39 @@ export async function GET(request: NextRequest) {
     const did = request.nextUrl.searchParams.get("did");
     const repoDid = (did || session.did) as AtIdentifierString;
 
-    const client = await getOAuthClient();
-    const oauthSession = await client.restore(session.did);
-    const lexClient = new Client(oauthSession);
+    if (did && repoDid !== session.did) {
+      const externalRecord = await fetchFirstRecordFromRepo(
+        ch.indiemusi.alpha.actor.publishingOwner,
+        repoDid,
+      );
+      if (externalRecord) {
+        return NextResponse.json({
+          success: true,
+          publishingOwner: externalRecord.value,
+          uri: externalRecord.uri,
+          did: repoDid,
+        });
+      }
+    } else {
+      const client = await getOAuthClient();
+      const oauthSession = await client.restore(session.did);
+      const lexClient = new Client(oauthSession);
 
-    const query = await lexClient.list(ch.indiemusi.alpha.actor.publishingOwner, {
-      limit: 10,
-      repo: repoDid,
-    })
-
-    if (query.records.length > 0) {
-      const record = query.records[0];
-      console.log("Fetched publishing owner records:", record.value);
-      return NextResponse.json({
-        success: true,
-        publishingOwner: record.value,
-        uri: record.uri,
-        did: repoDid,
+      const query = await lexClient.list(ch.indiemusi.alpha.actor.publishingOwner, {
+        limit: 10,
+        repo: repoDid,
       });
+
+      if (query.records.length > 0) {
+        const record = query.records[0];
+        console.log("Fetched publishing owner records:", record.value);
+        return NextResponse.json({
+          success: true,
+          publishingOwner: record.value,
+          uri: record.uri,
+          did: repoDid,
+        });
+      }
     }
 
     return NextResponse.json({

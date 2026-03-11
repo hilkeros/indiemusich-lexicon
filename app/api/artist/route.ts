@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Client } from "@atproto/lex";
+import { Client, type AtIdentifierString } from "@atproto/lex";
 import { getSession } from "@/lib/auth/session";
 import { getOAuthClient } from "@/lib/auth/client";
+import { fetchFirstRecordFromRepo } from "@/lib/atproto-actors";
 import * as ch from "@/src/lexicons/ch";
 
 export async function GET(request: NextRequest) {
@@ -11,35 +12,59 @@ export async function GET(request: NextRequest) {
   }
 
   const didParam = request.nextUrl.searchParams.get("did");
+  const repoDid = (didParam || session.did) as AtIdentifierString;
 
   try {
-    const client = await getOAuthClient();
-    const oauthSession = await client.restore(session.did);
-    const lexClient = new Client(oauthSession);
+    if (didParam && repoDid !== session.did) {
+      const externalRecord = await fetchFirstRecordFromRepo(
+        ch.indiemusi.alpha.actor.artist,
+        repoDid,
+      );
 
-    const repo = (didParam || session.did) as any;
-    const records = await lexClient.list(ch.indiemusi.alpha.actor.artist, {
-      limit: 10,
-      repo,
-    });
+      if (externalRecord) {
+        const value = externalRecord.value as Record<string, unknown>;
+        const artist = {
+          ...value,
+          $type: typeof value?.$type === "string" ? value.$type : "ch.indiemusi.alpha.actor.artist",
+        };
 
-    if (records.records.length > 0) {
-      const record = records.records[0];
-      const artist = {
-        ...(record.value || {}),
-        $type: record.value?.$type || "ch.indiemusi.alpha.actor.artist",
-      };
-      return NextResponse.json({
-        success: true,
-        artist,
-        uri: record.uri,
+        return NextResponse.json({
+          success: true,
+          artist,
+          uri: externalRecord.uri,
+          did: repoDid,
+        });
+      }
+    } else {
+      const client = await getOAuthClient();
+      const oauthSession = await client.restore(session.did);
+      const lexClient = new Client(oauthSession);
+
+      const records = await lexClient.list(ch.indiemusi.alpha.actor.artist, {
+        limit: 10,
+        repo: repoDid,
       });
+
+      if (records.records.length > 0) {
+        const record = records.records[0];
+        const artist = {
+          ...(record.value || {}),
+          $type: record.value?.$type || "ch.indiemusi.alpha.actor.artist",
+        };
+        return NextResponse.json({
+          success: true,
+          artist,
+          uri: record.uri,
+          did: repoDid,
+        });
+      }
     }
 
     return NextResponse.json({
       success: true,
       artist: null,
       uri: null,
+      did: repoDid,
     });
   } catch (error) {
     console.error("Failed to fetch artist:", error);

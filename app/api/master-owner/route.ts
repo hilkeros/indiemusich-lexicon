@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Client } from "@atproto/lex";
+import { Client, type AtIdentifierString } from "@atproto/lex";
 import { getSession } from "@/lib/auth/session";
 import { getOAuthClient } from "@/lib/auth/client";
+import { fetchFirstRecordFromRepo } from "@/lib/atproto-actors";
 import * as ch from "@/src/lexicons/ch";
 
 export async function GET(request: NextRequest) {
@@ -11,30 +12,48 @@ export async function GET(request: NextRequest) {
   }
 
   const didParam = request.nextUrl.searchParams.get("did");
+  const repoDid = (didParam || session.did) as AtIdentifierString;
 
   try {
-    const client = await getOAuthClient();
-    const oauthSession = await client.restore(session.did);
-    const lexClient = new Client(oauthSession);
+    if (didParam && repoDid !== session.did) {
+      const externalRecord = await fetchFirstRecordFromRepo(
+        ch.indiemusi.alpha.actor.masterOwner,
+        repoDid,
+      );
+      if (externalRecord) {
+        return NextResponse.json({
+          success: true,
+          masterOwner: externalRecord.value,
+          uri: externalRecord.uri,
+          did: repoDid,
+        });
+      }
+    } else {
+      const client = await getOAuthClient();
+      const oauthSession = await client.restore(session.did);
+      const lexClient = new Client(oauthSession);
 
-    const records = await lexClient.list(ch.indiemusi.alpha.actor.masterOwner, {
-      limit: 10,
-      repo: (didParam || session.did) as any,
-    })
-
-    if (records.records.length > 0) {
-      const record = records.records[0];
-      console.log("Fetched master owner records:", record.value);
-      return NextResponse.json({
-        success: true,
-        masterOwner: record.value,
-        uri: record.uri,
+      const records = await lexClient.list(ch.indiemusi.alpha.actor.masterOwner, {
+        limit: 10,
+        repo: repoDid,
       });
+
+      if (records.records.length > 0) {
+        const record = records.records[0];
+        console.log("Fetched master owner records:", record.value);
+        return NextResponse.json({
+          success: true,
+          masterOwner: record.value,
+          uri: record.uri,
+          did: repoDid,
+        });
+      }
     }
 
     return NextResponse.json({
       success: true,
       masterOwner: null,
+      did: repoDid,
     });
   } catch (error) {
     console.error("Failed to fetch master owner:", error);

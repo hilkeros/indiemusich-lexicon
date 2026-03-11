@@ -5,6 +5,8 @@ export interface ActorResult {
   avatar?: string;
 }
 
+import { Client, type AtIdentifierString } from "@atproto/lex";
+
 const PUBLIC_ACTOR_API_BASE = "https://public.api.bsky.app/xrpc/app.bsky.actor";
 
 function getAtprotoHandleFromAlsoKnownAs(alsoKnownAs: unknown): string | undefined {
@@ -19,7 +21,7 @@ function getAtprotoHandleFromAlsoKnownAs(alsoKnownAs: unknown): string | undefin
   return aka ? aka.slice(5) : undefined;
 }
 
-function getDidDocumentUrl(did: string): string | null {
+export function getDidDocumentUrl(did: string): string | null {
   if (did.startsWith("did:plc:")) {
     return `https://plc.directory/${did}`;
   }
@@ -41,6 +43,70 @@ function getDidDocumentUrl(did: string): string | null {
   }
 
   return null;
+}
+
+export async function resolvePdsEndpoint(did: string): Promise<string | null> {
+  const didDocumentUrl = getDidDocumentUrl(did);
+  if (!didDocumentUrl) {
+    return null;
+  }
+
+  const res = await fetch(didDocumentUrl, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    return null;
+  }
+
+  const didDocument = await res.json();
+  const services = Array.isArray(didDocument?.service) ? didDocument.service : [];
+  const pds = services.find(
+    (entry: { type?: unknown; serviceEndpoint?: unknown }) =>
+      entry?.type === "AtprotoPersonalDataServer" &&
+      typeof entry?.serviceEndpoint === "string",
+  );
+
+  return typeof pds?.serviceEndpoint === "string"
+    ? pds.serviceEndpoint.replace(/\/$/, "")
+    : null;
+}
+
+export async function fetchFirstRecordFromRepo(
+  collection: {
+    $type: string;
+    [key: string]: unknown;
+  },
+  repoDid: string,
+): Promise<{ uri: string; value: unknown } | null> {
+  const pdsEndpoint = await resolvePdsEndpoint(repoDid);
+  if (!pdsEndpoint) {
+    return null;
+  }
+
+  try {
+    const repoClient = new Client(pdsEndpoint);
+    const query = await repoClient.list(collection as any, {
+      limit: 10,
+      repo: repoDid as AtIdentifierString,
+    });
+
+    if (query.records.length === 0) {
+      return null;
+    }
+
+    const record = query.records[0];
+    return {
+      uri: record.uri,
+      value: record.value,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function resolveHandleFromDid(did: string): Promise<string | undefined> {
