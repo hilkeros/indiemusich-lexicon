@@ -18,9 +18,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div
-        className={`mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 ${
-          isLoggedIn ? "max-w-6xl" : "max-w-xl"
-        }`}
+        className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12"
       >
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
@@ -32,7 +30,7 @@ export default async function Home() {
         </div>
 
         <div
-          className={`bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 ${
+          className={`mx-auto max-w-xl bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 ${
             isLoggedIn
               ? "p-6 sm:p-8"
               : "p-5 sm:p-7 shadow-sm"
@@ -70,6 +68,18 @@ export default async function Home() {
             <LoginForm />
           )}
         </div>
+
+        {!session && (
+          <div className="mt-12 mx-auto max-w-4xl">
+            <video
+              controls
+              className="w-full rounded-lg shadow-lg dark:shadow-zinc-900/50"
+            >
+              <source src="/alpha%20indiemusi.ch%20demo.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        )}
       </div>
     </div>
   );
