@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { RecordingAudioUpload } from "@/components/RecordingAudioUpload";
 
 interface Artist {
   name: string;
@@ -27,6 +28,7 @@ interface Recording {
   isrc?: string;
   masterOwner?: MasterOwnerInfo;
   duration?: number;
+  audioFile?: { ownerDid: string; spaceSkey: string; rkey: string; mimeType?: string };
 }
 
 function formatDuration(seconds?: number): string {
@@ -169,6 +171,14 @@ export function RecordingList({
                   <p className="text-sm text-zinc-900 dark:text-zinc-100">{formatDuration(recording.duration)}</p>
                 </div>
               )}
+
+              <div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Audio</p>
+                <RecordingAudioUpload
+                  recordingUri={recording.id}
+                  initialAudioFile={recording.audioFile}
+                />
+              </div>
 
               <div className="flex gap-2 pt-2">
                 <button

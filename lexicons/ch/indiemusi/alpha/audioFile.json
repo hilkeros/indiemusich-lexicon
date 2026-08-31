@@ -1,0 +1,44 @@
+{
+  "lexicon": 1,
+  "id": "ch.indiemusi.alpha.audioFile",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "An audio file stored inside a user's private atproto space of type ch.indiemusi.alpha.audioLibrary. Not stored in the public repo.",
+      "record": {
+        "type": "object",
+        "required": ["mimeType", "audio"],
+        "properties": {
+          "audio": {
+            "type": "blob",
+            "description": "The raw audio blob, stored inside the space.",
+            "accept": ["audio/flac", "audio/mpeg", "audio/wav", "audio/aac", "audio/ogg"]
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "MIME type of the audio blob, e.g. audio/flac.",
+            "maxLength": 127
+          },
+          "duration": {
+            "type": "integer",
+            "description": "Duration of the audio in seconds."
+          },
+          "byteSize": {
+            "type": "integer",
+            "description": "Size of the audio file in bytes."
+          },
+          "encoding": {
+            "type": "string",
+            "description": "Audio encoding details, e.g. 'FLAC 24-bit / 96kHz stereo'.",
+            "maxLength": 255
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

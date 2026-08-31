@@ -201,7 +201,7 @@ export function ProfileTabs() {
             )}
           </>
         )}
-        {activeTab === "release" && (
+{activeTab === "release" && (
           <>
             <div className="mb-4">
               <button

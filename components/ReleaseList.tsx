@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AudioSpaceManager } from "@/components/AudioSpaceManager";
 
 interface Artist {
   name: string;
@@ -224,7 +225,7 @@ export function ReleaseList({
               </div>
 
               {isExpanded && (
-                <div className="mt-3 space-y-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                <div className="mt-3 space-y-4 border-t border-zinc-200 pt-3 dark:border-zinc-700">
                   {release.recordings && release.recordings.length > 0 && (
                     <div>
                       <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -254,6 +255,12 @@ export function ReleaseList({
                       </ul>
                     </div>
                   )}
+                  <div>
+                    <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">
+                      App access
+                    </p>
+                    <AudioSpaceManager skey={release.id.split("/").pop()!} />
+                  </div>
                 </div>
               )}
 

@@ -133,14 +133,18 @@ export async function PUT(request: NextRequest) {
     const oauthSession = await client.restore(session.did);
     const lexClient = new Client(oauthSession);
 
+    const uriParts = uri.split("/");
+    const rkey = uriParts[uriParts.length - 1];
+
+    const existing = await lexClient.get(ch.indiemusi.alpha.recording, { repo: session.did, rkey });
+    const existingValue = (existing as any)?.value ?? {};
+
     const updatedData: any = { title, artists };
     if (song) updatedData.song = song;
     if (isrc) updatedData.isrc = cleanISRC(isrc);
     if (masterOwner) updatedData.masterOwner = masterOwner;
     if (duration != null) updatedData.duration = parseInt(duration, 10);
-
-    const uriParts = uri.split("/");
-    const rkey = uriParts[uriParts.length - 1];
+    if (existingValue.audioFile) updatedData.audioFile = existingValue.audioFile;
 
     await lexClient.put(ch.indiemusi.alpha.recording, updatedData, { rkey });
 

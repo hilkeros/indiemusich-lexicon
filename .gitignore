@@ -42,3 +42,4 @@ next-env.d.ts
 
 # sqlite file
 app.db*
+.claude/settings.local.json

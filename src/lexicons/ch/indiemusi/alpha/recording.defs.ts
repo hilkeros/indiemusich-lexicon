@@ -28,7 +28,11 @@ type Main = {
    * Duration of the recording in seconds
    */
   duration?: number
-  audioFile?: l.BlobRef
+
+  /**
+   * Reference to the access-controlled audio file stored in the owner's atproto space.
+   */
+  audioFile?: AudioFileRef
 }
 
 export type { Main }
@@ -46,7 +50,7 @@ const main = l.record<'tid', Main>(
       l.ref<MasterOwnerInfo>((() => masterOwnerInfo) as any),
     ),
     duration: l.optional(l.integer()),
-    audioFile: l.optional(l.blob({ allowLegacy: false })),
+    audioFile: l.optional(l.ref<AudioFileRef>((() => audioFileRef) as any)),
   }),
 )
 
@@ -64,6 +68,47 @@ export const $assert = /*#__PURE__*/ main.assert.bind(main),
   $safeParse = /*#__PURE__*/ main.safeParse.bind(main),
   $validate = /*#__PURE__*/ main.validate.bind(main),
   $safeValidate = /*#__PURE__*/ main.safeValidate.bind(main)
+
+/** Pointer to a ch.indiemusi.alpha.audioFile record in the owner's private space. Requires a space credential from the owner's PDS to retrieve the audio blob. */
+type AudioFileRef = {
+  $type?: 'ch.indiemusi.alpha.recording#audioFileRef'
+
+  /**
+   * DID of the user whose space hosts the audio file record.
+   */
+  ownerDid: l.DidString
+
+  /**
+   * Space key of the ch.indiemusi.alpha.audioLibrary space holding this file. Corresponds to the rkey of the associated release record.
+   */
+  spaceSkey: string
+
+  /**
+   * Record key of the ch.indiemusi.alpha.audioFile record within the space.
+   */
+  rkey: string
+
+  /**
+   * MIME type hint, e.g. audio/flac. Allows display without fetching the space record.
+   */
+  mimeType?: string
+}
+
+export type { AudioFileRef }
+
+/** Pointer to a ch.indiemusi.alpha.audioFile record in the owner's private space. Requires a space credential from the owner's PDS to retrieve the audio blob. */
+const audioFileRef = l.typedObject<AudioFileRef>(
+  $nsid,
+  'audioFileRef',
+  l.object({
+    ownerDid: l.string({ format: 'did' }),
+    spaceSkey: l.string({ maxLength: 512 }),
+    rkey: l.string({ maxLength: 512 }),
+    mimeType: l.optional(l.string({ maxLength: 127 })),
+  }),
+)
+
+export { audioFileRef }
 
 /** Information about an artist contributing to the recording */
 type Artist = {

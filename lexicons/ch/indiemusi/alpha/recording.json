@@ -40,8 +40,37 @@
             "description": "Duration of the recording in seconds"
           },
           "audioFile": {
-            "type": "blob"
+            "type": "ref",
+            "ref": "#audioFileRef",
+            "description": "Reference to the access-controlled audio file stored in the owner's atproto space."
           }
+        }
+      }
+    },
+    "audioFileRef": {
+      "type": "object",
+      "description": "Pointer to a ch.indiemusi.alpha.audioFile record in the owner's private space. Requires a space credential from the owner's PDS to retrieve the audio blob.",
+      "required": ["ownerDid", "spaceSkey", "rkey"],
+      "properties": {
+        "ownerDid": {
+          "type": "string",
+          "format": "did",
+          "description": "DID of the user whose space hosts the audio file record."
+        },
+        "spaceSkey": {
+          "type": "string",
+          "description": "Space key of the ch.indiemusi.alpha.audioLibrary space holding this file. Corresponds to the rkey of the associated release record.",
+          "maxLength": 512
+        },
+        "rkey": {
+          "type": "string",
+          "description": "Record key of the ch.indiemusi.alpha.audioFile record within the space.",
+          "maxLength": 512
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type hint, e.g. audio/flac. Allows display without fetching the space record.",
+          "maxLength": 127
         }
       }
     },

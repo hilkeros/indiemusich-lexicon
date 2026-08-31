@@ -12,7 +12,7 @@ import type {
 } from "@atproto/oauth-client-node";
 import { getDb } from "../db";
 
-export const SCOPE = "atproto repo:ch.indiemusi.alpha.actor.artist repo:ch.indiemusi.alpha.actor.publishingOwner repo:ch.indiemusi.alpha.actor.masterOwner repo:ch.indiemusi.alpha.song repo:ch.indiemusi.alpha.recording repo:ch.indiemusi.alpha.release";
+export const SCOPE = "atproto repo:ch.indiemusi.alpha.actor.artist repo:ch.indiemusi.alpha.actor.publishingOwner repo:ch.indiemusi.alpha.actor.masterOwner repo:ch.indiemusi.alpha.song repo:ch.indiemusi.alpha.recording repo:ch.indiemusi.alpha.release space:ch.indiemusi.alpha.audioLibrary?action=read_self space:ch.indiemusi.alpha.audioLibrary?action=write_self space:ch.indiemusi.alpha.audioLibrary?manage=create space:ch.indiemusi.alpha.audioLibrary?manage=update blob:audio/flac blob:audio/mpeg blob:audio/wav blob:audio/aac blob:audio/ogg";
 
 // Use globalThis to persist across Next.js hot reloads
 const globalAuth = globalThis as unknown as {
